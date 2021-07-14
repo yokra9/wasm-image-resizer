@@ -17,3 +17,6 @@ RUN apt-get update && bash /tmp/library-scripts/node-debian.sh "${NVM_DIR}" && a
 ARG INSTALL_NODE="true"
 ARG NODE_VERSION="lts/*"
 RUN if [ "${INSTALL_NODE}" = "true" ]; then su vscode -c "umask 0002 && . /usr/local/share/nvm/nvm.sh && nvm install ${NODE_VERSION} 2>&1"; fi
+
+# cargo install
+RUN su vscode -c "umask 0002 && cargo install wasm-pack && cargo install cargo-edit"
