@@ -1,50 +1,82 @@
 import type * as WASM from "wasm-image-resizer"
+
 type Wasm = typeof WASM;
-
-// WASMのShimを動的インポートする
-const js = import("wasm-image-resizer/wasm_image_resizer");
-js.then(async wasm => {
-  // 画像をWASMインスタンスのメモリ上に格納する
-  const { ptr, len } = await loadImageToMemory('https://raw.githubusercontent.com/rustwasm/wasm-pack/master/demo.gif', wasm);
-
-  const format = "jpg";
-
-  // WASM側でメモリから画像を読み込んでリサイズ処理を行う
-  const base64 = wasm.resize_image_to_base64(ptr, len, 100, 200, format);
-
-  // base64画像を読み込み
-  const e = document.getElementById("sample");
-  //e.setAttribute("src", `data:image/${format};base64,${base64}`);
-
-  const blob = await base64ToBlob(base64, `image/${format}`);
-  e.setAttribute("src", URL.createObjectURL(blob));
-
-});
-
-async function base64ToBlob(base64: string, mime: string) {
-  const resp = await fetch(`data:${mime};base64,${base64}`);
-  return await resp.blob();
+type BufferValue = {
+  ptr: string,
+  len: number,
 }
 
-async function loadImageToMemory(img: string, { alloc, wasm_memory }: Wasm) {
+// WASMのShimを動的インポートする
+const js = import("wasm-image-resizer");
+js.then(async wasm => {
+  // 画像をWASMインスタンスのメモリ上に格納する
+  const url = 'https://raw.githubusercontent.com/rustwasm/wasm-pack/master/demo.gif'
+  const resp = await fetch(url);
+  const { ptr, len } = await loadImageToMemory(await resp.blob(), wasm);
 
-  // URLから画像を取得してバッファに入れる
-  const resp = await fetch(img);
-  const buf = await resp.arrayBuffer();
+  // WASM側でメモリから画像を読み込んでリサイズ処理を行う
+  const format = "png";
+  const result = wasm.resize_image(ptr, len, 100, 200, format) as BufferValue;
 
-  // バッファの長さを確認する
+  // WASMインスタンスのメモリから画像を取得する
+  const blob = loadImageFromMemory(Number(result.ptr), result.len, wasm);
+
+  // 画面上に処理結果を表示する
+  describeImageFromBlob(blob);
+});
+
+/**
+ * load image to memory on WASM instance
+ * @param {Blob} img image
+ * @param {Wasm} wasm WASM instance
+ * @returns {Promise<{ptr: number; len: number;}>} Pointer and Length
+ */
+async function loadImageToMemory(img: Blob, { alloc, wasm_memory }: Wasm) {
+
+  // 画像Blobからバッファを取得する
+  const buf = await img.arrayBuffer();
+
+  // 画像のデータ長を確認する
   const len = buf.byteLength;
-  console.log("len", len);
+  console.log(`Original: ${len} Bytes`);
 
   // WASMインスタンス側で同サイズのバッファを確保してポインタを取得する
   const ptr = alloc(len);
 
-  // WASMインスタンスのメモリ上のバイト配列を表示する型付き配列ビューを作成する
+  // WASMインスタンスのメモリ上のバイト配列を表示するビューを作成する
   const memory = wasm_memory() as WebAssembly.Memory;
-  const imgArray = new Uint8Array(memory.buffer, ptr, len);
+  const view = new Uint8Array(memory.buffer, ptr, len);
 
   // バッファから型付き配列を作成し、WASMインスタンスのメモリ上に格納する
-  imgArray.set(new Uint8Array(buf));
+  view.set(new Uint8Array(buf));
 
   return { ptr, len };
+}
+
+/**
+ * load image from memory on WASM instance
+ * @param {number} ptr Pointer 
+ * @param {number} len Length
+ * @param {Wasm} wasm WASM instance
+ * @returns {Blob} image
+ */
+function loadImageFromMemory(ptr: number, len: number, { wasm_memory }: Wasm) {
+  // WASMインスタンスのメモリ上のバイト配列を表示するビューを作成する
+  const memory = wasm_memory() as WebAssembly.Memory;
+  const view = new Uint8Array(memory.buffer, ptr, len);
+
+  // WASMインスタンスのメモリから画像Blobを取り出す
+  const blob = new Blob([view]);
+  console.log(`Resized: ${blob.size} Bytes`);
+
+  return blob
+}
+
+/**
+ * display blob image
+ * @param blob 
+ */
+function describeImageFromBlob(blob: Blob) {
+  const e = document.getElementById("sample");
+  e.setAttribute("src", URL.createObjectURL(blob));
 }
