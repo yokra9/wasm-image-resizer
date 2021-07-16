@@ -2,7 +2,7 @@ import type * as WASM from "wasm-image-resizer"
 
 type Wasm = typeof WASM;
 type BufferValue = {
-  ptr: string,
+  ptr: number,
   len: number,
 }
 
@@ -19,7 +19,7 @@ js.then(async wasm => {
   const result = wasm.resize_image(ptr, len, 100, 200, format) as BufferValue;
 
   // WASMインスタンスのメモリから画像を取得する
-  const blob = loadImageFromMemory(Number(result.ptr), result.len, wasm);
+  const blob = loadImageFromMemory(result.ptr, result.len, wasm);
 
   // 画面上に処理結果を表示する
   describeImageFromBlob(blob);

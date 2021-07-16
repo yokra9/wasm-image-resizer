@@ -9,7 +9,7 @@ use wasm_bindgen::prelude::*;
 
 #[derive(Serialize)]
 pub struct BufferValue {
-    ptr: String,
+    ptr: usize,
     len: usize,
 }
 
@@ -48,7 +48,7 @@ pub fn resize_image(ptr: *mut u8, len: usize, width: usize, height: usize, fmt: 
 
     // バッファのポインタとデータ長をJSに返却する
     let location = BufferValue {
-        ptr: format!("{:p}", result.as_mut_ptr()),
+        ptr: result.as_mut_ptr() as usize,
         len: result.len(),
     };
     JsValue::from_serde(&location).expect("Error occurs at JSON serialization.")
