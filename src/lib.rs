@@ -53,11 +53,11 @@ pub fn resize_image(ptr: *mut u8, len: usize, width: usize, height: usize, fmt: 
     timeEnd("load_from_buffer");
     
     // 指定サイズに画像をリサイズする
-    time("thumbnail");
-    let resized = img.thumbnail(width as u32, height as u32);
+    time("resize_to_fill");
+    let resized = img.resize_to_fill(width as u32, height as u32, imageops::FilterType::Triangle);
     // バッファに画像を書き出す
     let mut result = save_to_buffer(resized, fmt);
-    timeEnd("thumbnail");
+    timeEnd("resize_to_fill");
     
     time("BufferValue");
     // バッファのポインタとデータ長をJSに返却する
