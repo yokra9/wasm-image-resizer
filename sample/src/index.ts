@@ -1,5 +1,4 @@
 import type * as WASM from "wasm-image-resizer"
-import * as THREE from "three";
 
 type Wasm = typeof WASM;
 type BufferValue = {
@@ -11,45 +10,42 @@ type BufferValue = {
 const js = import("wasm-image-resizer");
 js.then(async wasm => {
   // 画像をWASMインスタンスのメモリ上に格納する
-  const url = './screenshot.png';
+  const url = `./img/${location.href.split('/').pop()}.jpg`;
   const resp = await fetch(url);
 
-  const b = await resp.blob();
-  const b2 = new Blob([b]);
-  const b3 = new Blob([b2]);
+  const b1 = await resp.blob();
+  const b2 = new Blob([b1]);
 
-  console.time("wasm");
-  
+  // WASMでリサイズ
+  console.time("##### WebAssembly #####");
+
   console.time("loadImageToMemory");
-  const { ptr, len } = await loadImageToMemory(b, wasm);
+  const { ptr, len } = await loadImageToMemory(b1, wasm);
   console.timeEnd("loadImageToMemory");
-  
+
   // WASM側でメモリから画像を読み込んでリサイズ処理を行う
   console.time("resize_image");
-  const format = "png";
-  const result = wasm.resize_image(ptr, len, 1024, 1024, format) as BufferValue;
+  const format = "jpg";
+  const result = wasm.resize_image(ptr, len, 512, 512, format) as BufferValue;
   console.timeEnd("resize_image");
-  
+
   // WASMインスタンスのメモリから画像を取得する
   console.time("loadImageFromMemory");
   const blob = loadImageFromMemory(result.ptr, result.len, wasm);
   console.timeEnd("loadImageFromMemory");
-  console.timeEnd("wasm");
-  
+  console.timeEnd("##### WebAssembly #####");
+
   // 画面上に処理結果を表示する
-  describeImageFromBlob(blob, "sample");
+  describeImageFromBlob(blob, "sample1");
 
-  console.time("resizeImageLegacy");
-  const blob2 = await resizeImageLegacy(b2, 1024, 1024)
-  console.timeEnd("resizeImageLegacy");
+  // 比較用: Canvasでリサイズ
+  console.time("##### resizeImageLegacy #####");
+  const blob2 = await resizeImageLegacy(b2, 512, 512)
+  console.timeEnd("##### resizeImageLegacy #####");
 
+  // 画面上に処理結果を表示する
   describeImageFromBlob(blob2, "sample2");
 
-  console.time("resizeImageGL");
-  const blob3 = await resizeImageGL(b3, 1024, 1024)
-  console.timeEnd("resizeImageGL");
-
-  describeImageFromBlob(blob3, "sample3");
 });
 
 /**
@@ -108,9 +104,23 @@ function describeImageFromBlob(blob: Blob, id: string) {
   e.setAttribute("src", URL.createObjectURL(blob));
 }
 
+/**
+ * resize image(JS-native)
+ * @param {Blob} file image
+ * @param width width
+ * @param height height
+ * @returns 
+ */
 function resizeImageLegacy(file: Blob, width: number, height: number): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const image = new Image();
+    const reader = new FileReader();
+    console.log(`Original: ${file.size} Bytes`);
+
+    reader.onload = () => {
+      if (typeof reader.result == 'string') image.src = reader.result;
+    };
+
     image.onload = () => {
       const canvas = document.createElement('canvas');
       canvas.width = width;
@@ -144,55 +154,6 @@ function resizeImageLegacy(file: Blob, width: number, height: number): Promise<B
       });
     };
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result == 'string') image.src = reader.result;
-    };
-
-    console.log(`Original: ${file.size} Bytes`);
-    reader.readAsDataURL(file);
-  });
-}
-
-function resizeImageGL(file: Blob, width: number, height: number): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const src = <string>reader.result;
-
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-
-      const renderer = new THREE.WebGLRenderer({ 'canvas': canvas });
-
-      const camera = new THREE.PerspectiveCamera();
-      camera.position.z = 1024;
-
-      const map = await (new THREE.TextureLoader()).loadAsync(src);
-      const material = new THREE.MeshBasicMaterial({ map });
-
-      const geometry = new THREE.PlaneGeometry(width, height);
-      const mesh = new THREE.Mesh(geometry, material);
-
-      const scene = new THREE.Scene();
-      scene.add(mesh);
-
-      renderer.render(scene, camera);
-
-      canvas.toBlob((blob) => {
-        if (blob == null) {
-          reject('cannot convert canvas to blob.');
-          return;
-        }
-        console.log(`Resized: ${blob.size} Bytes`);
-        resolve(blob);
-      });
-
-    };
-
-    console.log(`Original: ${file.size} Bytes`);
     reader.readAsDataURL(file);
   });
 }
