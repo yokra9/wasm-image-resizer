@@ -2,7 +2,7 @@
 
 Resize image with WebAssembly(Rust).
 
-## Sample with large mage
+## Sample with large images
 
 * [Sample1](https://yokra9.github.io/wasm-image-resizer/sample/dist/LoneStarGeyser.html)
 * [Sample2](https://yokra9.github.io/wasm-image-resizer/sample/dist/LakeMcDonald.html)
