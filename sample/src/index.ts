@@ -9,7 +9,6 @@ type BufferValue = {
 // WASMのShimを動的インポートする
 const js = import("wasm-image-resizer");
 js.then(async wasm => {
-  // 画像をWASMインスタンスのメモリ上に格納する
   const url = `./img/${location.href.split('/').pop()}.jpg`;
   const resp = await fetch(url);
 
@@ -19,6 +18,7 @@ js.then(async wasm => {
   // WASMでリサイズ
   console.time("##### WebAssembly #####");
 
+  // 画像をWASMインスタンスのメモリ上に格納する
   console.time("loadImageToMemory");
   const { ptr, len } = await loadImageToMemory(b1, wasm);
   console.timeEnd("loadImageToMemory");
