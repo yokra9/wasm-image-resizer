@@ -107,31 +107,39 @@ function describeImageFromBlob(blob: Blob, id: string) {
 /**
  * resize image(JS-native)
  * @param {Blob} file image
- * @param width width
- * @param height height
- * @returns 
+ * @param {number} width width
+ * @param {number} height height
+ * @returns {Promise<Blob>} image
  */
 function resizeImageLegacy(file: Blob, width: number, height: number): Promise<Blob> {
   return new Promise((resolve, reject) => {
+    console.time("create object");
     const image = new Image();
-    const reader = new FileReader();
     console.log(`Original: ${file.size} Bytes`);
+    console.timeEnd("create object");
 
-    reader.onload = () => {
-      if (typeof reader.result == 'string') image.src = reader.result;
-    };
+    console.time("URL.createObjectURL()");
+    const objectURL = URL.createObjectURL(file);
+    console.timeEnd("URL.createObjectURL()");
 
     image.onload = () => {
+      console.timeEnd("load image from ObjectURL");
+
+      console.time("Document.createElement()");
       const canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
+      console.timeEnd("Document.createElement()");
 
+      console.time("HTMLCanvasElement.getContext()");
       const ctx = canvas.getContext('2d');
       if (ctx == null) {
         reject('cannot get context.');
         return;
       }
+      console.timeEnd("HTMLCanvasElement.getContext()");
 
+      console.time("CanvasRenderingContext2D.drawImage()");
       ctx.drawImage(
         image,
         0,
@@ -143,17 +151,21 @@ function resizeImageLegacy(file: Blob, width: number, height: number): Promise<B
         canvas.width,
         canvas.height
       );
+      console.timeEnd("CanvasRenderingContext2D.drawImage()");
 
+      console.time("HTMLCanvasElement.toBlob()");
       canvas.toBlob((blob) => {
         if (blob == null) {
           reject('cannot convert canvas to blob.');
           return;
         }
         console.log(`Resized: ${blob.size} Bytes`);
+        console.timeEnd("HTMLCanvasElement.toBlob()");
         resolve(blob);
-      });
+      }, "image/jpeg", 0.8);
     };
 
-    reader.readAsDataURL(file);
+    console.time("load image from ObjectURL");
+    image.src = objectURL;
   });
 }
