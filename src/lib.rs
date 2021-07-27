@@ -1,89 +1,50 @@
 extern crate console_error_panic_hook;
 extern crate serde;
 extern crate wasm_bindgen;
-extern crate web_sys;
 
 use image::*;
-use serde::Serialize;
+use js_sys::*;
 use wasm_bindgen::prelude::*;
-
-#[derive(Serialize)]
-pub struct BufferValue {
-    ptr: usize,
-    len: usize,
-}
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    pub fn log(s: &str);
-
     #[wasm_bindgen(js_namespace = console)]
     pub fn time(s: &str);
 
     #[wasm_bindgen(js_namespace = console)]
     pub fn timeEnd(s: &str);
-
 }
 
-// WASMインスタンスのアクセスするメモリへのハンドルを返す
 #[wasm_bindgen]
-pub fn wasm_memory() -> JsValue {
-    wasm_bindgen::memory()
-}
-
-// 指定された長さのバッファを確保してポインタを返す
-#[wasm_bindgen]
-pub fn alloc(len: usize) -> *mut u8 {
-    let mut buf = Vec::with_capacity(len);
-    let ptr = buf.as_mut_ptr();
-    std::mem::forget(buf);
-    ptr
-}
-
-// 画像を指定の縦横幅にリサイズして、ポインタとデータ長を返却する
-#[wasm_bindgen]
-pub fn resize_image(ptr: *mut u8, len: usize, width: usize, height: usize, fmt: &str) -> JsValue {
+pub fn resize_image(arr: Uint8Array, width: usize, height: usize, fmt: &str) -> Uint8Array {
     console_error_panic_hook::set_once();
 
-    
-    time("load_from_buffer");
+    // Uint8Array から Vec にコピーする
+    time("Uint8Array to Vec<u8>");
+    let buffer = arr.to_vec();
+    timeEnd("Uint8Array to Vec<u8>");
+
     // バッファから画像を読み込む
-    let img = load_from_buffer(ptr, len);
-    timeEnd("load_from_buffer");
-    
+    time("image::load_from_memory()");
+    let img = load_from_memory(&buffer).expect("Error occurs at load image from buffer.");
+    timeEnd("image::load_from_memory()");
+
     // 指定サイズに画像をリサイズする
-    time("resize_to_fill");
+    time("image::resize_exact()");
     let resized = img.resize_exact(width as u32, height as u32, imageops::FilterType::Triangle);
+    timeEnd("image::resize_exact()");
+    
     // バッファに画像を書き出す
-    let mut result = save_to_buffer(resized, fmt);
-    timeEnd("resize_to_fill");
+    time("save_to_buffer");
+    let result = save_to_buffer(resized, fmt);
+    timeEnd("save_to_buffer");
     
-    time("BufferValue");
-    // バッファのポインタとデータ長をJSに返却する
-    let location = BufferValue {
-        ptr: result.as_mut_ptr() as usize,
-        len: result.len(),
-    };
-    timeEnd("BufferValue");
-    JsValue::from_serde(&location).expect("Error occurs at JSON serialization.")
-}
+    // バッファから Uint8Array を作成
+    time("Vec<u8> to Uint8Array");
+    let resp = Uint8Array::new(&unsafe { Uint8Array::view(&result) }.into());
+    timeEnd("Vec<u8> to Uint8Array");
 
-// バッファから画像を読み込む
-fn load_from_buffer(ptr: *mut u8, len: usize) -> DynamicImage {
-    console_error_panic_hook::set_once();
-    // 指定されたポインタとデータ長からバッファを取得
-
-    
-    time("from_raw_parts");
-    let src = unsafe { Vec::from_raw_parts(ptr, len, len) };    
-    timeEnd("from_raw_parts");
-    
-    time("load_from_memory");
-    let img = load_from_memory(&src).expect("Error occurs at load image from buffer.");
-    timeEnd("load_from_memory");
-
-    img
+    resp
 }
 
 // バッファに画像を書き出す
