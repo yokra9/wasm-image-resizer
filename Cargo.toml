@@ -25,5 +25,4 @@ image = { version = "0.23.14", default-features = false, features = [
     "webp",
     "bmp",
 ] }
-serde = { version = "1.0.126", features = ["derive"] }
 js-sys = "0.3.51"

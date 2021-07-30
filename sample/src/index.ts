@@ -21,7 +21,7 @@ js.then(async wasm => {
 
   // 比較用: Canvasでリサイズ
   console.time("##### resizeImageLegacy #####");
-  const blob2 = await resizeImageLegacy(b2, 512, 512)
+  const blob2 = await resizeImageLegacy(b2, 512, 512);
   console.timeEnd("##### resizeImageLegacy #####");
 
   // 画面上に処理結果を表示する

@@ -1,5 +1,4 @@
 extern crate console_error_panic_hook;
-extern crate serde;
 extern crate wasm_bindgen;
 
 use image::*;
