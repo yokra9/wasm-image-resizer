@@ -3,6 +3,7 @@ extern crate wasm_bindgen;
 
 use image::*;
 use js_sys::*;
+use opencv::prelude::*;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -32,12 +33,12 @@ pub fn resize_image(arr: Uint8Array, width: usize, height: usize, fmt: &str) -> 
     time("image::resize_exact()");
     let resized = img.resize_exact(width as u32, height as u32, imageops::FilterType::Triangle);
     timeEnd("image::resize_exact()");
-    
+
     // バッファに画像を書き出す
     time("save_to_buffer");
     let result = save_to_buffer(resized, fmt);
     timeEnd("save_to_buffer");
-    
+
     // バッファから Uint8Array を作成
     time("Vec<u8> to Uint8Array");
     let resp = Uint8Array::new(&unsafe { Uint8Array::view(&result) }.into());
@@ -64,4 +65,19 @@ fn save_to_buffer(img: DynamicImage, fmt_str: &str) -> Vec<u8> {
         .expect("Error occurs at save image from buffer.");
 
     result
+}
+
+#[wasm_bindgen]
+pub fn resize_image_with_opencv(
+    arr: Uint8Array,
+    width: usize,
+    height: usize,
+    fmt: &str,
+)  {
+    console_error_panic_hook::set_once();
+
+    // Uint8Array から Vec にコピーする
+    time("Uint8Array to Vec<u8>");
+    let buffer = arr.to_vec();
+    timeEnd("Uint8Array to Vec<u8>");
 }
