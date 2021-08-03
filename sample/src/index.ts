@@ -2,31 +2,31 @@ import type * as WASM from "wasm-image-resizer"
 
 type Wasm = typeof WASM;
 
+const url = `./img/${location.href.split('/').pop()}.jpg`;
+const resp = await fetch(url);
+
+const b1 = await resp.blob();
+const b2 = new Blob([b1]);
+
+/* -- Canvas API でリサイズ -- */
+console.time("##### resizeImageLegacy #####");
+const blob1 = await resizeImageLegacy(b1, 512, 512);
+console.timeEnd("##### resizeImageLegacy #####");
+
+// 画面上に処理結果を表示する
+describeImageFromBlob(blob1, "sample2");
+
+/* -- WASM でリサイズ -- */
 // WASMのShimを動的インポートする
 const js = import("wasm-image-resizer");
 js.then(async wasm => {
-  const url = `./img/${location.href.split('/').pop()}.jpg`;
-  const resp = await fetch(url);
 
-  const b1 = await resp.blob();
-  const b2 = new Blob([b1]);
-
-  // WASMでリサイズ
   console.time("##### WebAssembly #####");
-  const blob1 = await resizeImageWasm(b1, 512, 512, wasm);
+  const blob2 = await resizeImageWasm(b2, 512, 512, wasm);
   console.timeEnd("##### WebAssembly #####");
 
   // 画面上に処理結果を表示する
-  describeImageFromBlob(blob1, "sample1");
-
-  // 比較用: Canvasでリサイズ
-  console.time("##### resizeImageLegacy #####");
-  const blob2 = await resizeImageLegacy(b2, 512, 512);
-  console.timeEnd("##### resizeImageLegacy #####");
-
-  // 画面上に処理結果を表示する
-  describeImageFromBlob(blob2, "sample2");
-
+  describeImageFromBlob(blob2, "sample1");
 });
 
 /**

@@ -1,6 +1,8 @@
 # See here for image contents: https://github.com/microsoft/vscode-dev-containers/tree/v0.187.0/containers/rust/.devcontainer/base.Dockerfile
 
-FROM mcr.microsoft.com/vscode/devcontainers/rust:0-1
+# https://github.com/microsoft/vscode-dev-containers/tree/main/containers/rust/history
+# dev-1: Rust 1.54.0 @ db72f9579b1c56c4df87de9cfc3bbe1e78c9a760
+FROM mcr.microsoft.com/vscode/devcontainers/rust:dev-1
 
 # [Optional] Uncomment this section to install additional packages.
 # RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \

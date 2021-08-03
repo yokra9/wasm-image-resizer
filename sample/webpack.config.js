@@ -25,5 +25,8 @@ module.exports = {
             poll: true
         }
     },
-    experiments: { asyncWebAssembly: true }
+    experiments: {
+        asyncWebAssembly: true,
+        topLevelAwait: true
+    }
 };
