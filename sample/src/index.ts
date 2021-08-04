@@ -1,6 +1,10 @@
 import type * as WASM from "wasm-image-resizer"
 
 type Wasm = typeof WASM;
+type Window = {
+  cv: any
+}
+declare var window: Window
 
 const url = `./img/${location.href.split('/').pop()}.jpg`;
 const resp = await fetch(url);
@@ -28,6 +32,13 @@ js.then(async wasm => {
   // 画面上に処理結果を表示する
   describeImageFromBlob(blob2, "sample1");
 });
+
+/* -- OpenCV.js でリサイズ -- */
+const cvVer = "master";
+const script = document.createElement("script");
+script.src = `https://docs.opencv.org/${cvVer}/opencv.js`;
+script.onload = () => { console.log("OpenCV => ", window.cv) }
+document.head.appendChild(script);
 
 /**
  * display blob image
