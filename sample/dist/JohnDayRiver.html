@@ -6,10 +6,15 @@
 
 <body>
     <h1>Resize LARGE image with...</h1>
-    <h2>WebAssebly(Rust)</h2>
-    <img id="sample1">
     <h2>JS-native</h2>
+    <button onclick="resizeImageLegacy();">START!</button>
+    <img id="sample1">
+    <h2>WebAssebly(Rust)</h2>
+    <button onclick="resizeImageWasm();">START!</button>
     <img id="sample2">
+    <h2>WebAssebly(OpenCV.js)</h2>
+    <button onclick="resizeImageCV();">START!</button>
+    <img id="sample3">
     <p>
         You can see each processing time in developer tool.
     </p>
